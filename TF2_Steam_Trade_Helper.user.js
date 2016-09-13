@@ -2,7 +2,7 @@
 // @name        TF2 Steam Trade Helper
 // @namespace   steam
 // @match       *://steamcommunity.com/tradeoffer/new/*
-// @version     0.4
+// @version     0.5
 // @grant       GM_xmlhttpRequest
 // @downloadURL https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
 // @updateURL   https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
@@ -150,16 +150,16 @@
     };
 
     var addKeys = function(tag) {
-        ShowPromptDialog("Add Keys").done(function(value) {
+        ShowPromptDialog('Add Keys').done(function(value) {
             if (value !== null) {
-                selectItems(_data[tag].keys, value, tag);
+                selectKeys(value, tag);
                 refreshTrade();
             }
         });
     };
 
     var addMetal = function(tag) {
-        ShowPromptDialog("Add Metal").done(function(value) {
+        ShowPromptDialog('Add Metal').done(function(value) {
             if (value !== null) {
                 selectMetal(value, tag);
                 refreshTrade();
@@ -178,6 +178,15 @@
             for (var i = 0; i < count; i++) {
                 g_rgCurrentTradeStatus[tag].assets.push(items[i]);
             }
+        }
+    };
+
+    var selectKeys = function(count, tag) {
+        var availableKeys = _data[tag].keys.length;
+        if (count <= availableKeys) {
+            selectItems(_data[tag].keys, count, tag);
+        } else {
+            ShowAlertDialog(ITEM_KEY, 'Found only ' + availableKeys);
         }
     };
 
@@ -214,7 +223,7 @@
             }
 
             if (scrapMetal > totalScrapMetalCount) {
-                ShowAlertDialog('Alert', 'Cant combine selected value. Need ' + scrapToRefined(scrapMetal));
+                ShowAlertDialog(ITEM_REFINED_METAL, 'Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal));
             }
 
             if (refinedMetal > 0) {
@@ -229,7 +238,7 @@
                 selectItems(metal.scrap, scrapMetal, tag);
             }
         } else {
-            ShowAlertDialog('Alert', 'Found only ' + availableMetal);
+            ShowAlertDialog(ITEM_REFINED_METAL, 'Found only ' + availableMetal);
         }
     };
 
