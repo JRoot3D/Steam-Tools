@@ -1,15 +1,28 @@
 // ==UserScript==
-// @name        TF2 Steam Trade Helper
-// @namespace   steam
-// @match       *://steamcommunity.com/tradeoffer/new/*
-// @version     0.5
-// @grant       GM_xmlhttpRequest
-// @downloadURL https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
-// @updateURL   https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
+// @name         TF2 Steam Trade Helper
+// @namespace    steam
+// @match        *://steamcommunity.com/tradeoffer/new/*
+// @version      0.6
+// @grant        GM_addStyle
+// @grant        GM_xmlhttpRequest
+// @grant        GM_getResourceText
+// @require      https://cdn.jsdelivr.net/alertifyjs/1.8.0/alertify.min.js
+// @require      https://raw.githubusercontent.com/JRoot3D/Steam-Tools/master/lib/common_functions.js
+// @resource     alertifyCSS https://cdn.jsdelivr.net/alertifyjs/1.8.0/css/alertify.min.css
+// @resource     alertifyDefaultCSS https://cdn.jsdelivr.net/alertifyjs/1.8.0/css/themes/default.min.css
+// @downloadURL  https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
+// @updateURL    https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
 // ==/UserScript==
 
 (function() {
     'use strict';
+
+    if (!CF_checkVersion(0.9)) {
+        return;
+    }
+
+    CF_addStyle('alertifyCSS');
+    CF_addStyle('alertifyDefaultCSS');
 
     var APP_ID = 440;
     var CONTEXT_ID = 2;
@@ -143,7 +156,7 @@
         buttons.className = 'newmodal_buttons';
 
         buttons.appendChild(createButton('Add Metal', 'btn_green_white_innerfade btn_medium', _data[tag].addMetal));
-        buttons.appendChild(createButton('Add Keys', 'btn_green_white_innerfade btn_medium', _data[tag].addKeys));
+        buttons.appendChild(createButton('Add Keys', 'btn_blue_white_innerfade btn_medium', _data[tag].addKeys));
         buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[tag].clearTrade));
 
         element.append(buttons);
@@ -176,7 +189,9 @@
         var availableItems = items.length;
         if (count <= availableItems) {
             for (var i = 0; i < count; i++) {
-                g_rgCurrentTradeStatus[tag].assets.push(items[i]);
+                if (g_rgCurrentTradeStatus[tag].assets.indexOf(items[i]) == -1) {
+                    g_rgCurrentTradeStatus[tag].assets.push(items[i]);
+                }
             }
         }
     };
@@ -186,7 +201,7 @@
         if (count <= availableKeys) {
             selectItems(_data[tag].keys, count, tag);
         } else {
-            ShowAlertDialog(ITEM_KEY, 'Found only ' + availableKeys);
+            alertify.error(ITEM_KEY + ': ' + availableKeys);
         }
     };
 
@@ -223,7 +238,7 @@
             }
 
             if (scrapMetal > totalScrapMetalCount) {
-                ShowAlertDialog(ITEM_REFINED_METAL, 'Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal));
+                alertify.error('Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal));
             }
 
             if (refinedMetal > 0) {
@@ -238,7 +253,7 @@
                 selectItems(metal.scrap, scrapMetal, tag);
             }
         } else {
-            ShowAlertDialog(ITEM_REFINED_METAL, 'Found only ' + availableMetal);
+            alertify.error(ITEM_REFINED_METAL + ': ' + availableMetal);
         }
     };
 
@@ -254,13 +269,13 @@
     };
 
     var getParameterByName = function(name) {
-        var regex = new RegExp("[\\?&]" + name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]") + "=([^&#]*)"),
+        var regex = new RegExp('[\\?&]' + name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]') + '=([^&#]*)'),
             results = regex.exec(location.search);
-        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
     };
 
     if (getParameterByName('for_item')) {
-        var item = getParameterByName('for_item').split("_");
+        var item = getParameterByName('for_item').split('_');
         g_rgCurrentTradeStatus.them.assets[0] = {
             appid: item[0],
             contextid: item[1],
