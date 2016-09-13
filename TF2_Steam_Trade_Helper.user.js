@@ -2,10 +2,10 @@
 // @name        TF2 Steam Trade Helper
 // @namespace   steam
 // @match       *://steamcommunity.com/tradeoffer/new/*
-// @version     0.3
+// @version     0.4
 // @grant       GM_xmlhttpRequest
-// @downloadURL
-// @updateURL
+// @downloadURL https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
+// @updateURL   https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
 // ==/UserScript==
 
 (function() {
