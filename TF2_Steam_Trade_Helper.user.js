@@ -110,7 +110,7 @@
         }
     };
 
-    var addStyle = function(name) {
+    var addStyle = function (name) {
         var style = GM_getResourceText(name);
         GM_addStyle(style);
     };
@@ -133,15 +133,15 @@
     var getItemsByName = function (data, name) {
         var foundItems = [];
         var itemid;
-        var ids = data.rgInventory;
-        var items = data.rgDescriptions;
+        var ids = data['rgInventory'];
+        var items = data['rgDescriptions'];
 
         for (var key in ids) {
             var obj = ids[key];
-            var invid = obj.classid + '_' + obj.instanceid;
-            var marketname = items[invid].market_hash_name;
+            var invid = obj['classid'] + '_' + obj['instanceid'];
+            var marketname = items[invid]['market_hash_name'];
 
-            if (items[invid].tradable == 1 && (marketname == name || marketname == 'The ' + name)) {
+            if (items[invid]['tradable'] == 1 && (marketname == name || marketname == 'The ' + name)) {
                 var item = {
                     appid: APP_ID,
                     contextid: CONTEXT_ID,
@@ -156,7 +156,7 @@
     };
 
     var checkItemByAssetId = function (data, id) {
-        return !!data.rgInventory[id];
+        return !!data['rgInventory'][id];
     };
 
     var initTradeData = function (data, tag) {
@@ -349,7 +349,7 @@
                 selectMetal(metal, tag);
             }
         } else {
-            alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)')
+            alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)');
         }
     };
 
@@ -369,12 +369,9 @@
         var result = {};
         if (document.location.href.indexOf('?') !== -1) {
             var query = document.location.href
-            // get the query string
                 .replace(/^.*?\?/, '')
-                // and remove any existing hash string (thanks, @vrijdenker)
                 .replace(/#.*$/, '')
                 .split('&');
-
             for (var i = 0, l = query.length; i < l; i++) {
                 var aux = decodeURIComponent(query[i]).split('=');
                 result[aux[0]] = aux[1];
