@@ -59,10 +59,14 @@
                     var items = getItemsByName(_data.me.data, itemName);
                     if (items.length > 0) {
                         selectItems(items, 1, ME);
-                        refreshTrade();
                     } else {
                         alertify.error('The selected item does not exist in the Your Inventory.');
                     }
+                }
+
+                var buyPrice = _params['buy_price'];
+                if (buyPrice) {
+                    selectBuyPrice(buyPrice);
                 }
             }
         },
@@ -100,6 +104,11 @@
                         refreshTrade();
                     } else {
                         alertify.error('The selected item does not exist in the Their Inventory.');
+                    }
+
+                    var sellPrice = _params['sell_price'];
+                    if (sellPrice) {
+                        selectSellPrice(sellPrice);
                     }
                 }
             }
@@ -194,16 +203,38 @@
 
         buttons.appendChild(createButton('Add Metal', 'btn_green_white_innerfade btn_medium', _data[tag].addMetal));
         buttons.appendChild(createButton('Add Keys', 'btn_blue_white_innerfade btn_medium', _data[tag].addKeys));
+
+        if (tag == ME) {
+            buttons.appendChild(createButton('Buy price', 'btn_green_white_innerfade btn_medium', enterBuyPrice));
+        } else {
+            buttons.appendChild(createButton('Sell price', 'btn_green_white_innerfade btn_medium', enterSellPrice));
+        }
+
         buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[tag].clearTrade));
 
         element.append(buttons);
+    };
+
+    var enterBuyPrice = function () {
+        ShowPromptDialog('Enter price', 'Price format keys_metal (example 1_3.33 or 0_1.22)').done(function (value) {
+            if (value !== null) {
+                selectBuyPrice(value);
+            }
+        });
+    };
+
+    var enterSellPrice = function () {
+        ShowPromptDialog('Enter price', 'Price format keys_metal (example 1_3.33 or 0_1.22)').done(function (value) {
+            if (value !== null) {
+                selectSellPrice(value);
+            }
+        });
     };
 
     var addKeys = function (tag) {
         ShowPromptDialog('Add Keys').done(function (value) {
             if (value !== null) {
                 selectKeys(value, tag);
-                refreshTrade();
             }
         });
     };
@@ -212,7 +243,6 @@
         ShowPromptDialog('Add Metal').done(function (value) {
             if (value !== null) {
                 selectMetal(value, tag);
-                refreshTrade();
             }
         });
     };
@@ -231,6 +261,8 @@
                 }
             }
         }
+
+        refreshTrade();
     };
 
     var selectKeys = function (count, tag) {
@@ -294,12 +326,38 @@
         }
     };
 
+    var selectBuyPrice = function (buyPrice) {
+        parsePrice(buyPrice, ME);
+    };
+
+    var selectSellPrice = function (sellPrice) {
+        parsePrice(sellPrice, THEM);
+    };
+
+    var parsePrice = function (price, tag) {
+        var priceData = price.split('_');
+
+        if (priceData.length < 2) {
+            alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)')
+        } else {
+            var keys = priceData[0];
+            var metal = priceData[1];
+
+            if (keys > 0) {
+                selectKeys(keys, tag);
+            }
+
+            if (metal > 0) {
+                selectMetal(metal, tag);
+            }
+        }
+    };
+
     var notify = function (available, tag, itemName, callback) {
         if (available > 0) {
             alertify.warning('Available only ' + available + ' ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function (isClicked) {
                 if (isClicked) {
                     callback(available, tag);
-                    refreshTrade();
                 }
             };
         } else {
