@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      0.8
+// @version      0.9
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
