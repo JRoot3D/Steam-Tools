@@ -2,12 +2,11 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      0.9
+// @version      1.0
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @require      https://cdn.jsdelivr.net/alertifyjs/1.8.0/alertify.min.js
-// @require      https://raw.githubusercontent.com/JRoot3D/Steam-Tools/master/lib/common_functions.js
 // @resource     alertifyCSS https://cdn.jsdelivr.net/alertifyjs/1.8.0/css/alertify.min.css
 // @resource     alertifyDefaultCSS https://cdn.jsdelivr.net/alertifyjs/1.8.0/css/themes/default.min.css
 // @downloadURL  https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
@@ -16,10 +15,6 @@
 
 (function () {
     'use strict';
-
-    if (!CF_checkVersion(0.9)) {
-        return;
-    }
 
     var APP_ID = 440;
     var CONTEXT_ID = 2;
@@ -113,6 +108,11 @@
                 }
             }
         }
+    };
+
+    var addStyle = function(name) {
+        var style = GM_getResourceText(name);
+        GM_addStyle(style);
     };
 
     var refreshTrade = function () {
@@ -337,9 +337,7 @@
     var parsePrice = function (price, tag) {
         var priceData = price.split('_');
 
-        if (priceData.length < 2) {
-            alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)')
-        } else {
+        if (priceData.length == 2) {
             var keys = priceData[0];
             var metal = priceData[1];
 
@@ -350,6 +348,8 @@
             if (metal > 0) {
                 selectMetal(metal, tag);
             }
+        } else {
+            alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)')
         }
     };
 
@@ -380,7 +380,7 @@
                 result[aux[0]] = aux[1];
             }
         }
-        return  result;
+        return result;
     };
 
     var createButton = function (text, className, onclick) {
@@ -395,8 +395,8 @@
     };
 
     var mainInit = function () {
-        CF_addStyle('alertifyCSS');
-        CF_addStyle('alertifyDefaultCSS');
+        addStyle('alertifyCSS');
+        addStyle('alertifyDefaultCSS');
 
         _params = parseURLParams();
         requestInventory(g_steamID, ME);
