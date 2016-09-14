@@ -14,15 +14,12 @@
 // @updateURL    https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_Steam_Trade_Helper.user.js
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     if (!CF_checkVersion(0.9)) {
         return;
     }
-
-    CF_addStyle('alertifyCSS');
-    CF_addStyle('alertifyDefaultCSS');
 
     var APP_ID = 440;
     var CONTEXT_ID = 2;
@@ -34,8 +31,11 @@
     var ITEM_RECLAIMED_METAL = 'Reclaimed Metal';
     var ITEM_SCRAP_METAL = 'Scrap Metal';
 
+    var _params = {};
+
     var _data = {
         me: {
+            data: null,
             selector: '.tutorial_arrow_ctn',
             keys: [],
             metal: {
@@ -44,17 +44,30 @@
                 reclaimed: [],
                 scrap: []
             },
-            addMetal: function() {
+            addMetal: function () {
                 addMetal(ME);
             },
-            addKeys: function() {
+            addKeys: function () {
                 addKeys(ME);
             },
-            clearTrade: function() {
+            clearTrade: function () {
                 clearTrade(ME);
+            },
+            task: function () {
+                var itemName = _params['sell_item'];
+                if (itemName) {
+                    var items = getItemsByName(_data.me.data, itemName);
+                    if (items.length > 0) {
+                        selectItems(items, 1, ME);
+                        refreshTrade();
+                    } else {
+                        alertify.error('The selected item does not exist in the Your Inventory.');
+                    }
+                }
             }
         },
         them: {
+            data: null,
             selector: '.tradeoffer_partner_ready_note',
             keys: [],
             metal: {
@@ -63,34 +76,52 @@
                 reclaimed: [],
                 scrap: []
             },
-            addMetal: function() {
+            addMetal: function () {
                 addMetal(THEM);
             },
-            addKeys: function() {
+            addKeys: function () {
                 addKeys(THEM);
             },
-            clearTrade: function() {
+            clearTrade: function () {
                 clearTrade(THEM);
+            },
+            task: function () {
+                var itemParam = _params['for_item'];
+
+                if (itemParam) {
+                    var item = itemParam.split('_');
+                    if (checkItemByAssetId(_data.them.data, item[2])) {
+                        g_rgCurrentTradeStatus.them.assets[0] = {
+                            appid: item[0],
+                            contextid: item[1],
+                            assetid: item[2],
+                            amount: 1
+                        };
+                        refreshTrade();
+                    } else {
+                        alertify.error('The selected item does not exist in the Their Inventory.');
+                    }
+                }
             }
         }
     };
 
-    var refreshTrade = function() {
+    var refreshTrade = function () {
         RefreshTradeStatus(g_rgCurrentTradeStatus, true);
     };
 
-    var requestInventory = function(steamId, tag) {
+    var requestInventory = function (steamId, tag) {
         GM_xmlhttpRequest({
             method: 'GET',
             url: 'https://steamcommunity.com/profiles/' + steamId + '/inventory/json/' + APP_ID + '/' + CONTEXT_ID,
-            onload: function(response) {
+            onload: function (response) {
                 var data = JSON.parse(response.responseText);
                 initTradeData(data, tag);
             }
         });
     };
 
-    var getItems = function(data, name) {
+    var getItemsByName = function (data, name) {
         var foundItems = [];
         var itemid;
         var ids = data.rgInventory;
@@ -115,12 +146,16 @@
         return foundItems;
     };
 
-    var initTradeData = function(data, tag) {
-        var keys = getItems(data, ITEM_KEY);
+    var checkItemByAssetId = function (data, id) {
+        return !!data.rgInventory[id];
+    };
 
-        var refinedMetal = getItems(data, ITEM_REFINED_METAL);
-        var reclaimedMetal = getItems(data, ITEM_RECLAIMED_METAL);
-        var scrapMetal = getItems(data, ITEM_SCRAP_METAL);
+    var initTradeData = function (data, tag) {
+        var keys = getItemsByName(data, ITEM_KEY);
+
+        var refinedMetal = getItemsByName(data, ITEM_REFINED_METAL);
+        var reclaimedMetal = getItemsByName(data, ITEM_RECLAIMED_METAL);
+        var scrapMetal = getItemsByName(data, ITEM_SCRAP_METAL);
 
         var totalRefinedMetalCount = refinedMetal.length;
         var totalReclaimedMetalCount = reclaimedMetal.length;
@@ -129,16 +164,18 @@
         totalScrapMetalCount += totalReclaimedMetalCount * 3;
         totalRefinedMetalCount += scrapToRefined(totalScrapMetalCount);
 
+        _data[tag].data = data;
         _data[tag].keys = keys;
         _data[tag].metal.refined = refinedMetal;
         _data[tag].metal.reclaimed = reclaimedMetal;
         _data[tag].metal.scrap = scrapMetal;
         _data[tag].metal.total = totalRefinedMetalCount;
 
+        _data[tag].task();
         initInterface(tag);
     };
 
-    var scrapToRefined = function(value) {
+    var scrapToRefined = function (value) {
         var result = Math.floor(value / 9);
         var scrap = value - result * 9;
         var reclaimed = Math.floor(scrap / 3);
@@ -149,7 +186,7 @@
         return result;
     };
 
-    var initInterface = function(tag) {
+    var initInterface = function (tag) {
         var element = jQuery(_data[tag].selector).first();
 
         var buttons = document.createElement('DIV');
@@ -162,8 +199,8 @@
         element.append(buttons);
     };
 
-    var addKeys = function(tag) {
-        ShowPromptDialog('Add Keys').done(function(value) {
+    var addKeys = function (tag) {
+        ShowPromptDialog('Add Keys').done(function (value) {
             if (value !== null) {
                 selectKeys(value, tag);
                 refreshTrade();
@@ -171,8 +208,8 @@
         });
     };
 
-    var addMetal = function(tag) {
-        ShowPromptDialog('Add Metal').done(function(value) {
+    var addMetal = function (tag) {
+        ShowPromptDialog('Add Metal').done(function (value) {
             if (value !== null) {
                 selectMetal(value, tag);
                 refreshTrade();
@@ -180,12 +217,12 @@
         });
     };
 
-    var clearTrade = function(tag) {
+    var clearTrade = function (tag) {
         g_rgCurrentTradeStatus[tag].assets = [];
         refreshTrade();
     };
 
-    var selectItems = function(items, count, tag) {
+    var selectItems = function (items, count, tag) {
         var availableItems = items.length;
         if (count <= availableItems) {
             for (var i = 0; i < count; i++) {
@@ -196,7 +233,7 @@
         }
     };
 
-    var selectKeys = function(count, tag) {
+    var selectKeys = function (count, tag) {
         var availableKeys = _data[tag].keys.length;
         if (count <= availableKeys) {
             selectItems(_data[tag].keys, count, tag);
@@ -205,7 +242,7 @@
         }
     };
 
-    var selectMetal = function(count, tag) {
+    var selectMetal = function (count, tag) {
         var availableMetal = _data[tag].metal.total;
         if (count <= availableMetal) {
             count = count * 1 + 0.001;
@@ -257,9 +294,9 @@
         }
     };
 
-    var notify = function(available, tag, itemName, callback) {
+    var notify = function (available, tag, itemName, callback) {
         if (available > 0) {
-            alertify.warning('Available only ' + available + ' ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function(isClicked) {
+            alertify.warning('Available only ' + available + ' ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function (isClicked) {
                 if (isClicked) {
                     callback(available, tag);
                     refreshTrade();
@@ -270,7 +307,25 @@
         }
     };
 
-    var createButton = function(text, className, onclick) {
+    var parseURLParams = function () {
+        var result = {};
+        if (document.location.href.indexOf('?') !== -1) {
+            var query = document.location.href
+            // get the query string
+                .replace(/^.*?\?/, '')
+                // and remove any existing hash string (thanks, @vrijdenker)
+                .replace(/#.*$/, '')
+                .split('&');
+
+            for (var i = 0, l = query.length; i < l; i++) {
+                var aux = decodeURIComponent(query[i]).split('=');
+                result[aux[0]] = aux[1];
+            }
+        }
+        return  result;
+    };
+
+    var createButton = function (text, className, onclick) {
         var button = document.createElement('DIV');
         button.className = className;
         var caption = document.createElement('SPAN');
@@ -281,22 +336,14 @@
         return button;
     };
 
-    var getParameterByName = function(name) {
-        var regex = new RegExp('[\\?&]' + name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]') + '=([^&#]*)'),
-            results = regex.exec(location.search);
-        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    var mainInit = function () {
+        CF_addStyle('alertifyCSS');
+        CF_addStyle('alertifyDefaultCSS');
+
+        _params = parseURLParams();
+        requestInventory(g_steamID, ME);
+        requestInventory(g_ulTradePartnerSteamID, THEM);
     };
 
-    if (getParameterByName('for_item')) {
-        var item = getParameterByName('for_item').split('_');
-        g_rgCurrentTradeStatus.them.assets[0] = {
-            appid: item[0],
-            contextid: item[1],
-            assetid: item[2],
-            amount: 1
-        };
-    }
-
-    requestInventory(g_steamID, ME);
-    requestInventory(g_ulTradePartnerSteamID, THEM);
+    mainInit();
 })();
