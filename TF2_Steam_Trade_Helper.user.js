@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      0.7
+// @version      0.8
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
@@ -129,7 +129,6 @@
         totalScrapMetalCount += totalReclaimedMetalCount * 3;
         totalRefinedMetalCount += scrapToRefined(totalScrapMetalCount);
 
-        _data[tag].loaded = true;
         _data[tag].keys = keys;
         _data[tag].metal.refined = refinedMetal;
         _data[tag].metal.reclaimed = reclaimedMetal;
