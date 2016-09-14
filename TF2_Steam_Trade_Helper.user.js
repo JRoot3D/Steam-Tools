@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      0.6
+// @version      0.7
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
@@ -129,6 +129,7 @@
         totalScrapMetalCount += totalReclaimedMetalCount * 3;
         totalRefinedMetalCount += scrapToRefined(totalScrapMetalCount);
 
+        _data[tag].loaded = true;
         _data[tag].keys = keys;
         _data[tag].metal.refined = refinedMetal;
         _data[tag].metal.reclaimed = reclaimedMetal;
@@ -201,7 +202,7 @@
         if (count <= availableKeys) {
             selectItems(_data[tag].keys, count, tag);
         } else {
-            alertify.error(ITEM_KEY + ': ' + availableKeys);
+            notify(availableKeys, tag, ITEM_KEY, selectKeys);
         }
     };
 
@@ -238,7 +239,7 @@
             }
 
             if (scrapMetal > totalScrapMetalCount) {
-                alertify.error('Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal));
+                alertify.error('Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal) + ' ' + ITEM_REFINED_METAL);
             }
 
             if (refinedMetal > 0) {
@@ -253,7 +254,20 @@
                 selectItems(metal.scrap, scrapMetal, tag);
             }
         } else {
-            alertify.error(ITEM_REFINED_METAL + ': ' + availableMetal);
+            notify(availableMetal, tag, ITEM_REFINED_METAL, selectMetal);
+        }
+    };
+
+    var notify = function(available, tag, itemName, callback) {
+        if (available > 0) {
+            alertify.warning('Available only ' + available + ' ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function(isClicked) {
+                if (isClicked) {
+                    callback(available, tag);
+                    refreshTrade();
+                }
+            };
+        } else {
+            alertify.error((tag == ME ? 'You do not have ' : 'He had no ') + itemName);
         }
     };
 
