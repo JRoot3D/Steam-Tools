@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      1.1
+// @version      1.2
 // @author       JRoot3D
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
@@ -33,7 +33,6 @@
         me: {
             data: null,
             selector: '.tutorial_arrow_ctn',
-            controls: null,
             keys: [],
             metal: {
                 total: 0,
@@ -41,7 +40,6 @@
                 reclaimed: [],
                 scrap: []
             },
-            loaded: false,
             addMetal: function () {
                 addMetal(ME);
             },
@@ -66,14 +64,11 @@
                 if (buyPrice) {
                     parseParamPrice(buyPrice, ME);
                 }
-
-                checkBothLoaded(THEM);
             }
         },
         them: {
             data: null,
             selector: '.tradeoffer_partner_ready_note',
-            controls: null,
             keys: [],
             metal: {
                 total: 0,
@@ -81,7 +76,6 @@
                 reclaimed: [],
                 scrap: []
             },
-            loaded: false,
             addMetal: function () {
                 addMetal(THEM);
             },
@@ -113,8 +107,6 @@
                 if (sellPrice) {
                     parseParamPrice(sellPrice, THEM);
                 }
-
-                checkBothLoaded(ME);
             }
         }
     };
@@ -141,7 +133,6 @@
 
     var getItemsByName = function (data, name) {
         var foundItems = [];
-        var itemid;
         var ids = data['rgInventory'];
         var items = data['rgDescriptions'];
 
@@ -183,7 +174,6 @@
         totalRefinedMetalCount = scrapToRefined(totalScrapMetalCount);
 
         _data[tag].data = data;
-        _data[tag].loaded = true;
         _data[tag].keys = keys;
         _data[tag].metal.refined = refinedMetal;
         _data[tag].metal.reclaimed = reclaimedMetal;
@@ -191,6 +181,7 @@
         _data[tag].metal.total = totalRefinedMetalCount;
 
         initInterface(tag);
+
         _data[tag].task();
     };
 
@@ -203,42 +194,39 @@
     };
 
     var initInterface = function (tag) {
-        var element = jQuery(_data[tag].selector).first();
+        var element;
 
         var buttons = document.createElement('DIV');
         buttons.className = 'newmodal_buttons';
 
-        buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[tag].clearTrade));
+        if (tag == ME) {
+            element = jQuery(_data[THEM].selector).first();
+            buttons.appendChild(createInput('buy_price'));
+            buttons.appendChild(createButton('Buy price', 'btn_blue_white_innerfade btn_medium', enterBuyPrice));
+            buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[THEM].clearTrade));
 
-        buttons.appendChild(createButton('Add Metal', 'btn_green_white_innerfade btn_medium', _data[tag].addMetal));
-        buttons.appendChild(createButton('Add Keys', 'btn_blue_white_innerfade btn_medium', _data[tag].addKeys));
-
-        _data[tag].controls = buttons;
+        } else {
+            element = jQuery(_data[ME].selector).first();
+            buttons.appendChild(createInput('sell_price'));
+            buttons.appendChild(createButton('Sell price', 'btn_blue_white_innerfade btn_medium', enterSellPrice));
+            buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[ME].clearTrade));
+        }
 
         element.append(buttons);
     };
 
-    var checkBothLoaded = function (tag) {
-        if (_data[tag].loaded) {
-            jQuery(_data[THEM].controls).append(createButton('Buy price', 'btn_green_white_innerfade btn_medium', enterBuyPrice));
-            jQuery(_data[ME].controls).append(createButton('Sell price', 'btn_green_white_innerfade btn_medium', enterSellPrice));
+    var enterBuyPrice = function () {
+        var value = jQuery('#buy_price').val();
+        if (value !== null) {
+            parseEnteredPrice(value, ME);
         }
     };
 
-    var enterBuyPrice = function () {
-        ShowPromptDialog('Enter price', 'Example 1k 3.44r or 3k or 2.33r').done(function (value) {
-            if (value !== null) {
-                parseEnteredPrice(value, ME);
-            }
-        });
-    };
-
     var enterSellPrice = function () {
-        ShowPromptDialog('Enter price', 'Example 1k 3.44r or 3k or 2.33r').done(function (value) {
-            if (value !== null) {
-                parseEnteredPrice(value, THEM);
-            }
-        });
+        var value = jQuery('#sell_price').val();
+        if (value !== null) {
+            parseEnteredPrice(value, THEM);
+        }
     };
 
     var addKeys = function (tag) {
@@ -259,6 +247,13 @@
 
     var clearTrade = function (tag) {
         g_rgCurrentTradeStatus[tag].assets = [];
+
+        if (tag == ME) {
+            jQuery('#buy_price').val('');
+        } else {
+            jQuery('#sell_price').val('');
+        }
+
         refreshTrade();
     };
 
@@ -341,15 +336,26 @@
         var priceData = price.split('_');
 
         if (priceData.length == 2) {
+            var value = '';
             var keys = priceData[0];
             var metal = priceData[1];
 
             if (keys > 0) {
                 selectKeys(keys, tag);
+                value += keys + 'k '
             }
 
             if (metal > 0) {
                 selectMetal(metal, tag);
+                value += metal + 'r ';
+            }
+
+            if (value) {
+                if (tag == ME) {
+                    jQuery('#buy_price').val(value);
+                } else {
+                    jQuery('#sell_price').val(value);
+                }
             }
         } else {
             alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)');
@@ -377,15 +383,19 @@
         } else if (typeof metal === 'string' || metal instanceof String) {
             metal = metal.match(valueRegExp);
         } else {
-            metal = 0
+            metal = 0;
         }
 
-        if (keys > 0) {
-            selectKeys(keys, tag);
-        }
+        if (keys != 0 || metal != 0) {
+            if (keys > 0) {
+                selectKeys(keys, tag);
+            }
 
-        if (metal > 0) {
-            selectMetal(metal, tag);
+            if (metal > 0) {
+                selectMetal(metal, tag);
+            }
+        } else {
+            alertify.error('Wrong price format! Price format example 1k 3.33r or 1.22r or 5k)');
         }
     };
 
@@ -425,6 +435,15 @@
         jQuery(button).on('click', onclick);
 
         return button;
+    };
+
+    var createInput = function (id) {
+        var field = document.createElement('INPUT');
+        field.setAttribute('placeholder', 'Enter price...');
+        field.setAttribute('type', 'text');
+        field.className = 'filter_search_box';
+        field.id = id;
+        return field;
     };
 
     var mainInit = function () {
