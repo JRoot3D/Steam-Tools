@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         backpack.tf Trade Helper
 // @namespace    backpack
-// @version      0.2
+// @version      0.3
 // @author       JRoot3D
 // @match        *://backpack.tf/classifieds*
 // @match        *://backpack.tf/stats*
@@ -12,6 +12,24 @@
 
 (function () {
     'use strict';
+
+    var isNeedQualityName = function (id) {
+        var result = false;
+
+        switch (id) {
+            case '1':
+            case '3':
+            case '5':
+            case '9':
+            case '11':
+            case '13':
+            case '14':
+                result = true;
+                break;
+        }
+
+        return result;
+    };
 
     var parsePrice = function (price) {
         price = price.replace(/\s/g, '');
@@ -53,7 +71,12 @@
 
             if (href.indexOf('friends') == -1) {
                 if (intent == '0') {
-                    var itemName = item.attr('title');
+                    var itemAustralium = item.attr('data-australium');
+                    var itemQuality = item.attr('data-quality');
+                    var itemQName = item.attr('data-q_name');
+                    var itemName = (isNeedQualityName(itemQuality) ? itemQName + ' ' : '') +
+                        (itemAustralium ? 'Australium ' : '') +
+                        item.attr('data-name');
                     href += '&sell_item=' + itemName;
                     href += '&sell_price=' + priceParam;
                 } else {

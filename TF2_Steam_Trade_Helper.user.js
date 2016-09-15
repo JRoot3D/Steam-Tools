@@ -22,6 +22,13 @@
     var ME = 'me';
     var THEM = 'them';
 
+    var PARAMS = {
+        BUY_PRICE: 'buy_price',
+        SELL_PRICE: 'sell_price',
+        SELL_ITEM: 'sell_item',
+        FOR_ITEM: 'for_item'
+    };
+
     var ITEM_KEY = 'Mann Co. Supply Crate Key';
     var ITEM_REFINED_METAL = 'Refined Metal';
     var ITEM_RECLAIMED_METAL = 'Reclaimed Metal';
@@ -50,7 +57,7 @@
                 clearTrade(ME);
             },
             task: function () {
-                var itemName = _params['sell_item'];
+                var itemName = _params[PARAMS.SELL_ITEM];
                 if (itemName) {
                     var items = getItemsByName(_data.me.data, itemName);
                     if (items.length > 0) {
@@ -60,7 +67,7 @@
                     }
                 }
 
-                var buyPrice = _params['buy_price'];
+                var buyPrice = _params[PARAMS.BUY_PRICE];
                 if (buyPrice) {
                     parseParamPrice(buyPrice, ME);
                 }
@@ -86,7 +93,7 @@
                 clearTrade(THEM);
             },
             task: function () {
-                var itemParam = _params['for_item'];
+                var itemParam = _params[PARAMS.FOR_ITEM];
 
                 if (itemParam) {
                     var item = itemParam.split('_');
@@ -103,7 +110,7 @@
                     }
                 }
 
-                var sellPrice = _params['sell_price'];
+                var sellPrice = _params[PARAMS.SELL_PRICE];
                 if (sellPrice) {
                     parseParamPrice(sellPrice, THEM);
                 }
@@ -201,13 +208,13 @@
 
         if (tag == ME) {
             element = jQuery(_data[THEM].selector).first();
-            buttons.appendChild(createInput('buy_price'));
+            buttons.appendChild(createInput(PARAMS.BUY_PRICE));
             buttons.appendChild(createButton('Buy price', 'btn_blue_white_innerfade btn_medium', enterBuyPrice));
             buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[THEM].clearTrade));
 
         } else {
             element = jQuery(_data[ME].selector).first();
-            buttons.appendChild(createInput('sell_price'));
+            buttons.appendChild(createInput(PARAMS.SELL_PRICE));
             buttons.appendChild(createButton('Sell price', 'btn_blue_white_innerfade btn_medium', enterSellPrice));
             buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[ME].clearTrade));
         }
@@ -216,14 +223,14 @@
     };
 
     var enterBuyPrice = function () {
-        var value = jQuery('#buy_price').val();
+        var value = jQuery('#' + PARAMS.BUY_PRICE).val();
         if (value !== null) {
             parseEnteredPrice(value, ME);
         }
     };
 
     var enterSellPrice = function () {
-        var value = jQuery('#sell_price').val();
+        var value = jQuery('#' + PARAMS.SELL_PRICE).val();
         if (value !== null) {
             parseEnteredPrice(value, THEM);
         }
@@ -249,9 +256,9 @@
         g_rgCurrentTradeStatus[tag].assets = [];
 
         if (tag == ME) {
-            jQuery('#buy_price').val('');
+            jQuery('#' + PARAMS.BUY_PRICE).val('');
         } else {
-            jQuery('#sell_price').val('');
+            jQuery('#' + PARAMS.SELL_PRICE).val('');
         }
 
         refreshTrade();
@@ -352,9 +359,9 @@
 
             if (value) {
                 if (tag == ME) {
-                    jQuery('#buy_price').val(value);
+                    jQuery('#' + PARAMS.BUY_PRICE).val(value);
                 } else {
-                    jQuery('#sell_price').val(value);
+                    jQuery('#' + PARAMS.SELL_PRICE).val(value);
                 }
             }
         } else {
