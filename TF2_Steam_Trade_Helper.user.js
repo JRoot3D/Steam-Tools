@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      1.3
+// @version      1.4
 // @author       JRoot3D
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
@@ -61,6 +61,7 @@
                     var items = getItemsByName(_data.me.data, itemName);
                     if (items.length > 0) {
                         selectItems(items, 1, 0, ME);
+                        refreshTrade();
                     } else {
                         alertify.error('The selected item does not exist in the Your Inventory.');
                     }
