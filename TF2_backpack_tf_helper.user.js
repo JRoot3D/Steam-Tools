@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         backpack.tf Trade Helper
 // @namespace    backpack
-// @version      0.1
+// @version      0.2
 // @author       JRoot3D
 // @match        *://backpack.tf/*
 // @grant        none
@@ -42,16 +42,17 @@
 
     var updateTradeLinks = function () {
         jQuery('.media.listing').each(function () {
-            var price = jQuery(this).find('.item').attr('data-listing_price');
+            var item = jQuery(this).find('.item');
+            var price = item.attr('data-listing_price');
             var priceParam = parsePrice(price);
 
-            var intent = jQuery(this).find('.item').attr('data-listing_intent');
+            var intent = item.attr('data-listing_intent');
             var button = jQuery(this).find('.btn.btn-bottom.btn-xs.btn-primary, .btn.btn-bottom.btn-xs.btn-success');
             var href = button.attr('href');
 
             if (href.indexOf('friends') == -1) {
                 if (intent == '0') {
-                    var itemName = jQuery(this).find('.item').attr('data-name');
+                    var itemName = item.attr('title');
                     href += '&sell_item=' + itemName;
                     href += '&sell_price=' + priceParam;
                 } else {
