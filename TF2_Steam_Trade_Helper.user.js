@@ -2,7 +2,8 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      1.0
+// @version      1.1
+// @author       JRoot3D
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
@@ -32,6 +33,7 @@
         me: {
             data: null,
             selector: '.tutorial_arrow_ctn',
+            controls: null,
             keys: [],
             metal: {
                 total: 0,
@@ -39,6 +41,7 @@
                 reclaimed: [],
                 scrap: []
             },
+            loaded: false,
             addMetal: function () {
                 addMetal(ME);
             },
@@ -61,13 +64,16 @@
 
                 var buyPrice = _params['buy_price'];
                 if (buyPrice) {
-                    selectBuyPrice(buyPrice);
+                    parseParamPrice(buyPrice, ME);
                 }
+
+                checkBothLoaded(THEM);
             }
         },
         them: {
             data: null,
             selector: '.tradeoffer_partner_ready_note',
+            controls: null,
             keys: [],
             metal: {
                 total: 0,
@@ -75,6 +81,7 @@
                 reclaimed: [],
                 scrap: []
             },
+            loaded: false,
             addMetal: function () {
                 addMetal(THEM);
             },
@@ -100,12 +107,14 @@
                     } else {
                         alertify.error('The selected item does not exist in the Their Inventory.');
                     }
-
-                    var sellPrice = _params['sell_price'];
-                    if (sellPrice) {
-                        selectSellPrice(sellPrice);
-                    }
                 }
+
+                var sellPrice = _params['sell_price'];
+                if (sellPrice) {
+                    parseParamPrice(sellPrice, THEM);
+                }
+
+                checkBothLoaded(ME);
             }
         }
     };
@@ -170,27 +179,25 @@
         var totalReclaimedMetalCount = reclaimedMetal.length;
         var totalScrapMetalCount = scrapMetal.length;
 
-        totalScrapMetalCount += totalReclaimedMetalCount * 3;
-        totalRefinedMetalCount += scrapToRefined(totalScrapMetalCount);
+        totalScrapMetalCount += totalRefinedMetalCount * 9 + totalReclaimedMetalCount * 3;
+        totalRefinedMetalCount = scrapToRefined(totalScrapMetalCount);
 
         _data[tag].data = data;
+        _data[tag].loaded = true;
         _data[tag].keys = keys;
         _data[tag].metal.refined = refinedMetal;
         _data[tag].metal.reclaimed = reclaimedMetal;
         _data[tag].metal.scrap = scrapMetal;
         _data[tag].metal.total = totalRefinedMetalCount;
 
-        _data[tag].task();
         initInterface(tag);
+        _data[tag].task();
     };
 
     var scrapToRefined = function (value) {
         var result = Math.floor(value / 9);
         var scrap = value - result * 9;
-        var reclaimed = Math.floor(scrap / 3);
-
-        scrap -= reclaimed * 3;
-        result += reclaimed * 0.33 + scrap * 0.11;
+        result = 1 * (result + '.' + (scrap * 11));
 
         return result;
     };
@@ -201,32 +208,35 @@
         var buttons = document.createElement('DIV');
         buttons.className = 'newmodal_buttons';
 
+        buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[tag].clearTrade));
+
         buttons.appendChild(createButton('Add Metal', 'btn_green_white_innerfade btn_medium', _data[tag].addMetal));
         buttons.appendChild(createButton('Add Keys', 'btn_blue_white_innerfade btn_medium', _data[tag].addKeys));
 
-        if (tag == ME) {
-            buttons.appendChild(createButton('Buy price', 'btn_green_white_innerfade btn_medium', enterBuyPrice));
-        } else {
-            buttons.appendChild(createButton('Sell price', 'btn_green_white_innerfade btn_medium', enterSellPrice));
-        }
-
-        buttons.appendChild(createButton('Clear', 'btn_grey_white_innerfade btn_medium', _data[tag].clearTrade));
+        _data[tag].controls = buttons;
 
         element.append(buttons);
     };
 
+    var checkBothLoaded = function (tag) {
+        if (_data[tag].loaded) {
+            jQuery(_data[THEM].controls).append(createButton('Buy price', 'btn_green_white_innerfade btn_medium', enterBuyPrice));
+            jQuery(_data[ME].controls).append(createButton('Sell price', 'btn_green_white_innerfade btn_medium', enterSellPrice));
+        }
+    };
+
     var enterBuyPrice = function () {
-        ShowPromptDialog('Enter price', 'Price format keys_metal (example 1_3.33 or 0_1.22)').done(function (value) {
+        ShowPromptDialog('Enter price', 'Example 1k 3.44r or 3k or 2.33r').done(function (value) {
             if (value !== null) {
-                selectBuyPrice(value);
+                parseEnteredPrice(value, ME);
             }
         });
     };
 
     var enterSellPrice = function () {
-        ShowPromptDialog('Enter price', 'Price format keys_metal (example 1_3.33 or 0_1.22)').done(function (value) {
+        ShowPromptDialog('Enter price', 'Example 1k 3.44r or 3k or 2.33r').done(function (value) {
             if (value !== null) {
-                selectSellPrice(value);
+                parseEnteredPrice(value, THEM);
             }
         });
     };
@@ -266,6 +276,7 @@
     };
 
     var selectKeys = function (count, tag) {
+        count = Math.floor(count);
         var availableKeys = _data[tag].keys.length;
         if (count <= availableKeys) {
             selectItems(_data[tag].keys, count, tag);
@@ -326,15 +337,7 @@
         }
     };
 
-    var selectBuyPrice = function (buyPrice) {
-        parsePrice(buyPrice, ME);
-    };
-
-    var selectSellPrice = function (sellPrice) {
-        parsePrice(sellPrice, THEM);
-    };
-
-    var parsePrice = function (price, tag) {
+    var parseParamPrice = function (price, tag) {
         var priceData = price.split('_');
 
         if (priceData.length == 2) {
@@ -350,6 +353,39 @@
             }
         } else {
             alertify.error('Wrong price format! Price format keys_metal (example 1_3.33 or 0_1.22)');
+        }
+    };
+
+    var parseEnteredPrice = function (price, tag) {
+        var keyRegExp = /\d+(\.\d+)?k/g;
+        var metalRegExp = /\d+(\.\d+)?r/g;
+        var valueRegExp = /\d+(\.\d+)?/g;
+
+        var keys = price.match(keyRegExp);
+        var metal = price.match(metalRegExp);
+
+        if (Array.isArray(keys)) {
+            keys = keys[0].match(valueRegExp);
+        } else if (typeof keys === 'string' || keys instanceof String) {
+            keys = keys.match(valueRegExp);
+        } else {
+            keys = 0;
+        }
+
+        if (Array.isArray(metal)) {
+            metal = metal[0].match(valueRegExp);
+        } else if (typeof metal === 'string' || metal instanceof String) {
+            metal = metal.match(valueRegExp);
+        } else {
+            metal = 0
+        }
+
+        if (keys > 0) {
+            selectKeys(keys, tag);
+        }
+
+        if (metal > 0) {
+            selectMetal(metal, tag);
         }
     };
 
