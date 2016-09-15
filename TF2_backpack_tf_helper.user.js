@@ -3,7 +3,8 @@
 // @namespace    backpack
 // @version      0.2
 // @author       JRoot3D
-// @match        *://backpack.tf/*
+// @match        *://backpack.tf/classifieds*
+// @match        *://backpack.tf/stats*
 // @grant        none
 // @downloadURL  https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_backpack_tf_helper.user.js
 // @updateURL    https://github.com/JRoot3D/Steam-Tools/raw/master/TF2_backpack_tf_helper.user.js
