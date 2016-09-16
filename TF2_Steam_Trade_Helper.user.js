@@ -2,7 +2,7 @@
 // @name         TF2 Steam Trade Helper
 // @namespace    steam
 // @match        *://steamcommunity.com/tradeoffer/new/*
-// @version      1.4
+// @version      1.5
 // @author       JRoot3D
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
@@ -28,11 +28,13 @@
         SELL_ITEM: 'sell_item',
         FOR_ITEM: 'for_item'
     };
-
-    var ITEM_KEY = 'Mann Co. Supply Crate Key';
-    var ITEM_REFINED_METAL = 'Refined Metal';
-    var ITEM_RECLAIMED_METAL = 'Reclaimed Metal';
-    var ITEM_SCRAP_METAL = 'Scrap Metal';
+    
+    var ITEM = {
+        KEY: 'Mann Co. Supply Crate Key',
+        REFINED_METAL: 'Refined Metal',
+        RECLAIMED_METAL: 'Reclaimed Metal',
+        SCRAP_METAL: 'Scrap Metal'
+    };
 
     var _params = {};
 
@@ -59,9 +61,18 @@
                 var itemName = _params[PARAMS.SELL_ITEM];
                 if (itemName) {
                     var items = getItemsByName(_data.me.data, itemName);
-                    if (items.length > 0) {
+                    var available = items.length;
+                    if (available > 0) {
                         selectItems(items, 1, 0, ME);
                         refreshTrade();
+                        if (available > 1) {
+                            alertify.warning('Available ' + available + ' of ' + itemName + '. Click to give All and select which you want.').delay(10).callback = function (isClicked) {
+                                if (isClicked) {
+                                    selectItems(items, available, 1, ME);
+                                    refreshTrade();
+                                }
+                            };
+                        }
                     } else {
                         alertify.error('The selected item does not exist in the Your Inventory.');
                     }
@@ -166,11 +177,11 @@
     };
 
     var initTradeData = function (data, tag) {
-        var keys = getItemsByName(data, ITEM_KEY);
+        var keys = getItemsByName(data, ITEM.KEY);
 
-        var refinedMetal = getItemsByName(data, ITEM_REFINED_METAL);
-        var reclaimedMetal = getItemsByName(data, ITEM_RECLAIMED_METAL);
-        var scrapMetal = getItemsByName(data, ITEM_SCRAP_METAL);
+        var refinedMetal = getItemsByName(data, ITEM.REFINED_METAL);
+        var reclaimedMetal = getItemsByName(data, ITEM.RECLAIMED_METAL);
+        var scrapMetal = getItemsByName(data, ITEM.SCRAP_METAL);
 
         var totalRefinedMetalCount = refinedMetal.length;
         var totalReclaimedMetalCount = reclaimedMetal.length;
@@ -276,7 +287,7 @@
             selectItems(_data[tag].keys, count, _data[tag].previousKeys, tag);
             _data[tag].previousKeys = count;
         } else {
-            notify(availableKeys, tag, ITEM_KEY, selectKeys);
+            notify(availableKeys, tag, ITEM.KEY, selectKeys);
         }
     };
 
@@ -313,7 +324,7 @@
             }
 
             if (scrapMetal > totalScrapMetalCount) {
-                alertify.error('Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal) + ' ' + ITEM_REFINED_METAL);
+                alertify.error('Can\'t combine selected value. Need ' + scrapToRefined(scrapMetal) + ' ' + ITEM.REFINED_METAL);
             }
 
             selectItems(metal.refined, refinedMetal, _data[tag].metal.previousRefined, tag);
@@ -326,7 +337,7 @@
             _data[tag].metal.previousScrap = scrapMetal;
 
         } else {
-            notify(availableMetal, tag, ITEM_REFINED_METAL, selectMetal);
+            notify(availableMetal, tag, ITEM.REFINED_METAL, selectMetal);
         }
     };
 
@@ -398,7 +409,7 @@
 
     var notify = function (available, tag, itemName, callback) {
         if (available > 0) {
-            alertify.warning('Available only ' + available + ' ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function (isClicked) {
+            alertify.warning('Available only ' + available + ' of ' + itemName + '. Click to ' + (tag == ME ? 'give' : 'take') + ' All').delay(10).callback = function (isClicked) {
                 if (isClicked) {
                     callback(available, tag);
                     refreshTrade();
